@@ -4,7 +4,8 @@ This is the last project in the Udacity Full Stack Nanodegree, it is for linux s
 ## Server Details
 
 1- This is an amazon lightsail virtual machine hosting a linux OS.
-2- the IP for this server is 35.156.112.27
+
+2- the IP for this server is 35.156.112.27.
 
 
 
