@@ -110,5 +110,142 @@ i had given a sudo access to the catalog user.
 - While logged in as `catalog`, create a database: `createdb catalog`.
 
 
-## Step 12: 
+## Step 12: Clone the Item Catalog project.
+
+- While logged in as grader, create the folder catalog, `mkdir /var/www/catalog`.
+- install git, `sudo apt-get install git`
+- Cd to that folder and clone the repo, `sudo git clone https://github.com/mahmoudgamal1988/Item-Catalog.git catalog`.
+- Cd to the new created catalog folder and rename the `application.py` o `__init__.py` by `mv application.py __init__.py`.
+- In the __init__.py change the line `app.run(host="0.0.0.0", port=8000, debug=True)` to `app.run()`
+- in the files database_setup.py, data.py & __init__.py change the engine line to `engine = create_engine('postgresql://catalog:PASSWORD@localhost/catalog')`.
+- create a new client_secret via google oauth and change the content of the current file with the new one and change the client ID in the login.html to the new provided key, and the same has been done for the FB login.
+
+
+## Step 13: Install the virtual environment.
+
+```
+sudo apt-get install python3-pip
+sudo apt-get install python-virtualenv
+```
+
+- Change to the `/var/www/catalog/catalog/` directory.
+```
+sudo virtualenv -p python3 venv3
+sudo chown -R grader:grader venv3/
+. venv3/bin/activate
+```
+
+## Step 14: install some needed packges.
+
+```
+ pip install httplib2
+ pip install requests
+ pip install --upgrade oauth2client
+ pip install sqlalchemy
+ pip install flask
+ sudo apt-get install libpq-dev
+ pip install psycopg2
+ ```
+ 
+ ## Step 15: Create and enable a virtual host
+ 
+ - Add the following line in `/etc/apache2/mods-enabled/wsgi.conf` file 
+to use Python 3.
+
+  ```
+  #WSGIPythonPath directory|directory-1:directory-2:...
+  WSGIPythonPath /var/www/catalog/catalog/venv3/lib/python3.5/site-packages
+  ```
+
+- Create `/etc/apache2/sites-available/catalog.conf` and add the 
+following lines to configure the virtual host:
+
+  ```
+  <VirtualHost *:80>
+	  ServerName 13.59.39.163
+    ServerAlias ec2-13-59-39-163.us-west-2.compute.amazonaws.com
+	  WSGIScriptAlias / /var/www/catalog/catalog.wsgi
+	  <Directory /var/www/catalog/catalog/>
+	  	Order allow,deny
+		  Allow from all
+	  </Directory>
+	  Alias /static /var/www/catalog/catalog/static
+	  <Directory /var/www/catalog/catalog/static/>
+		  Order allow,deny
+		  Allow from all
+	  </Directory>
+	  ErrorLog ${APACHE_LOG_DIR}/error.log
+	  LogLevel warn
+	  CustomLog ${APACHE_LOG_DIR}/access.log combined
+  </VirtualHost>
+  ```
+
+- Enable virtual host: `sudo a2ensite catalog`.
+- Reload Apache: `sudo service apache2 reload`.
+
+## Step 16: Set up the flask app.
+
+- Create `/var/www/catalog/catalog.wsgi` file add the following lines:
+
+  ```
+  activate_this = '/var/www/catalog/catalog/venv3/bin/activate_this.py'
+  with open(activate_this) as file_:
+      exec(file_.read(), dict(__file__=activate_this))
+
+  #!/usr/bin/python
+  import sys
+  import logging
+  logging.basicConfig(stream=sys.stderr)
+  sys.path.insert(0, "/var/www/catalog/catalog/")
+  sys.path.insert(1, "/var/www/catalog/")
+
+  from catalog import app as application
+  application.secret_key = "..."
+  ```
+  
+  ## Step 17: set uo the database scheme and populate it.
+  
+  - Edit `/var/www/catalog/catalog/data.py`.
+- Replace `lig.random_para(250)` by `lig.random_para(240)` on lines 86, 143, 191, 234 and 280.
+
+- Add the these two lines at the beginning of the file.
+
+  ```
+  import sys
+  sys.path.insert(0, "/var/www/catalog/catalog/venv3/lib/python3.5/site-packages") 
+  ```
+
+- Add the following lines under `create_db()`.
+
+  ```
+  # Create database.
+  create_db()
+
+  # Delete all rows.
+  session.query(Item).delete()
+  session.query(Category).delete()
+  session.query(User).delete()
+  ```
+
+- From the `/var/www/catalog/catalog/` directory, 
+activate the virtual environment: `. venv3/bin/activate`.
+- Run: `python data.py`.
+
+## Step 18: Prepare the app to be launched.
+
+- Disable the default Apache site: `sudo a2dissite 000-default.conf`. 
+The following prompt will be returned:
+
+  ```
+  Site 000-default disabled.
+  To activate the new configuration, you need to run:
+    service apache2 reload
+  ```
+
+- Reload Apache: `sudo service apache2 reload`.
+
+- Change the ownership of the project directories: `sudo chown -R www-data:www-data catalog/`.
+- Restart Apache again: `sudo service apache2 restart`.
+
+
 
